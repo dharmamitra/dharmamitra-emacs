@@ -38,16 +38,16 @@ To re-enable translations:
 
 ### Key Bindings
 
-The package automatically binds `C-c g` for text and org modes. To customize the key binding, add something like this to your `.emacs`:
+In order to enable the key binding, add this to your `.emacs`:
 
 ```elisp
 ;; Bind to a different key globally
-(global-set-key (kbd "C-c d") #'dharmamitra-text-analyze-grammar)
+(global-set-key (kbd "C-c g") #'dharmamitra-text-analyze-grammar)
 
 ;; Or bind for specific modes
 (add-hook 'sanskrit-mode-hook
           (lambda ()
-            (local-set-key (kbd "C-c d") #'dharmamitra-text-analyze-grammar)))
+            (local-set-key (kbd "C-c g") #'dharmamitra-text-analyze-grammar)))
 ```
 
 ## Usage
