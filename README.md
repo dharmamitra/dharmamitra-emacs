@@ -26,7 +26,7 @@ An Emacs package for translating and analyzing Sanskrit, Pāli, Tibetan, and Chi
 
 ### Translation Settings
 
-By default, translations are included in the analysis output. To disable translations, add this to your `.emacs`:
+By default, translations are included in the analysis output. To disable translations (which makes the system significantly faster), add this to your `.emacs`:
 
 ```elisp
 (setq dharmamitra-text-include-translation nil)
