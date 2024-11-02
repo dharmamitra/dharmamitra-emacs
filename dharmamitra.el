@@ -1,12 +1,12 @@
 ;;; dharmamitra-text-grammar.el --- Sanskrit/Pāli grammar analysis tool -*- lexical-binding: t -*-
 
-;; Author: User
+;; Author: Sebastian Nehrdich 
 ;; Keywords: languages, tools
 ;; Version: 0.1
 ;; Package-Requires: ((emacs "26.1"))
 
 ;;; Commentary:
-;; Provides grammar analysis for Sanskrit/Pāli texts using the dharmamitra.org API.
+;; Provides translation and grammar analysis for Sanskrit/Pāli/Tibetan/Chinese texts using the dharmamitra.org API.
 
 ;;; Code:
 
