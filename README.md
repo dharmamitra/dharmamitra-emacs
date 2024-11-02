@@ -2,6 +2,8 @@
 
 An Emacs package for translating and analyzing Sanskrit, Pāli, Tibetan, and Chinese texts using the [Dharmamitra.org](https://dharmamitra.org) API.
 
+![Screenshot of Dharmamitra grammar analysis](screenshot.png)
+
 ## Features
 
 - Grammar analysis for Sanskrit
