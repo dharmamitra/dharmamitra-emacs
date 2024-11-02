@@ -17,7 +17,7 @@ An Emacs package for translating and analyzing Sanskrit, Pāli, Tibetan, and Chi
 2. Add the following to your `.emacs` or `init.el`:
 
 ```elisp
-;; Add the directory containing dharmamitra-text-grammar.el to load-path
+;; Add the directory containing dharmamitra.el to load-path
 (add-to-list 'load-path "/path/to/directory/containing/dharmamitra")
 (require 'dharmamitra)
 ```
