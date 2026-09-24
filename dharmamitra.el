@@ -1,6 +1,7 @@
 ;;; dharmamitra.el --- Sanskrit/Pāli/Tibetan/Chinese analysis via dharmamitra.org -*- lexical-binding: t -*-
 
 ;; Author: Sebastian Nehrdich
+;; Assisted-by: Claude Code:claude-fable-5-1
 ;; URL: https://github.com/dharmamitra/dharmamitra-emacs
 ;; Keywords: languages, tools
 ;; Version: 0.2
