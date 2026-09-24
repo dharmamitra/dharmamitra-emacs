@@ -137,6 +137,10 @@ The translation endpoint is rate limited per IP (about 10 requests per minute). 
 - curl (for API requests)
 - Internet connection to access dharmamitra.org
 
+## License
+
+GPL-3.0-or-later. See [LICENSE](LICENSE).
+
 ## Citation
 The preprint to this system is available on [arxiv](https://arxiv.org/abs/2409.13920).
 There is also a github repository with the actual models and description on their use [here](https://github.com/sebastian-nehrdich/byt5-sanskrit-analyzers/).
