@@ -1,6 +1,7 @@
 ;;; dharmamitra.el --- Sanskrit/Pāli/Tibetan/Chinese analysis via dharmamitra.org -*- lexical-binding: t -*-
 
 ;; Author: Sebastian Nehrdich
+;; URL: https://github.com/dharmamitra/dharmamitra-emacs
 ;; Keywords: languages, tools
 ;; Version: 0.2
 ;; Package-Requires: ((emacs "26.1"))
@@ -18,6 +19,12 @@
 ;; `dharmamitra-text-mode', which offers keys to re-run the analysis, toggle
 ;; translation, expand full dictionary entries, move between words, switch
 ;; languages and copy results.  See `dharmamitra-text-mode' for the bindings.
+;;
+;; The package does not bind any global keys.  A typical setup is:
+;;
+;;   (require 'dharmamitra)
+;;   (global-set-key (kbd "C-c g") #'dharmamitra-text-analyze-grammar)
+;;   (global-set-key (kbd "C-c t") #'dharmamitra-text-translate)
 
 ;;; Code:
 
@@ -236,7 +243,7 @@ HTTP status code (or nil) and the response body."
    (t (format "%s" detail))))
 
 (defun dharmamitra-text--response-error (http body data)
-  "Return an error message for a failed response, or nil if it looks fine.
+  "Return an error message for a failed response, or nil when it is fine.
 HTTP is the status code, BODY the raw body and DATA the parsed JSON."
   (cond
    ((and (consp data) (assq 'detail data))
@@ -280,7 +287,9 @@ Returns `tibetan', `chinese' or `sanskrit'."
     ("grammar_type" . ,dharmamitra-text-grammar-type)))
 
 (defun dharmamitra-text--parse-grammar (err http body)
-  "Turn a tagging response into (:ok . SENTENCES) or (:error . MESSAGE)."
+  "Turn a tagging response into (:ok . SENTENCES) or (:error . MESSAGE).
+ERR is a transport error string or nil, HTTP the status code and BODY
+the response body."
   (if err
       (cons :error err)
     (let* ((data (dharmamitra-text--parse-json body))
@@ -471,7 +480,9 @@ says whether full dictionary entries should be shown."
     (string-trim text)))
 
 (defun dharmamitra-text--parse-translation (err http body)
-  "Turn a translation response into (:ok . TEXT) or (:error . MESSAGE)."
+  "Turn a translation response into (:ok . TEXT) or (:error . MESSAGE).
+ERR is a transport error string or nil, HTTP the status code and BODY
+the response body."
   (if err
       (cons :error err)
     (let* ((data (dharmamitra-text--parse-json body))
@@ -611,7 +622,7 @@ COPY is the plain text stored for `dharmamitra-text-copy'."
                  "g rerun  t translation  TAB dictionary  E all  n/p word  l target  s source  w copy  q quit"))))
 
 (defun dharmamitra-text--check-buffer ()
-  "Signal an error unless the current buffer holds a Dharmamitra analysis."
+  "Signal an error unless the current buffer is a Dharmamitra analysis."
   (unless (and (derived-mode-p 'dharmamitra-text-mode)
                (plist-get dharmamitra-text--state :text))
     (user-error "No Dharmamitra analysis in this buffer")))
@@ -746,24 +757,28 @@ the value, inside a word block it copies the form, lemma and tag."
 
 ;;;; Commands
 
-(defun dharmamitra-text--start (text)
-  "Start grammar analysis and translation of TEXT in the analysis buffer."
+(defun dharmamitra-text--start (text &optional translation-only)
+  "Start grammar analysis and translation of TEXT in the analysis buffer.
+With TRANSLATION-ONLY non-nil, skip the grammar analysis and always
+translate."
   (let* ((buffer (get-buffer-create dharmamitra-text-buffer-name))
          (id (setq dharmamitra-text--request-counter
                    (1+ dharmamitra-text--request-counter)))
          (language (dharmamitra-text--source-language text))
-         (grammar-supported (memq language '(sanskrit pali))))
+         (grammar-supported (and (not translation-only)
+                                 (memq language '(sanskrit pali))))
+         (translate (or translation-only dharmamitra-text-include-translation)))
     (with-current-buffer buffer
       (unless (derived-mode-p 'dharmamitra-text-mode)
         (dharmamitra-text-mode))
       (setq dharmamitra-text--state
             (list :id id
                   :text text
-                  :grammar (if grammar-supported
-                               nil
-                             (cons :skipped
-                                   (format "not available for %s text" language)))
-                  :translation (if dharmamitra-text-include-translation nil 'disabled)
+                  :grammar (cond (grammar-supported nil)
+                                 (translation-only (cons :skipped "skipped (translation only)"))
+                                 (t (cons :skipped
+                                          (format "not available for %s text" language))))
+                  :translation (if translate nil 'disabled)
                   :expanded nil
                   :expand-all nil))
       (dharmamitra-text--render buffer)
@@ -777,7 +792,7 @@ the value, inside a word block it copies the form, lemma and tag."
        (lambda (err http body)
          (dharmamitra-text--receive
           buffer id :grammar (dharmamitra-text--parse-grammar err http body)))))
-    (when dharmamitra-text-include-translation
+    (when translate
       (dharmamitra-text--post-json
        dharmamitra-text-translation-url
        (dharmamitra-text--translation-payload text)
@@ -786,20 +801,36 @@ the value, inside a word block it copies the form, lemma and tag."
           buffer id :translation (dharmamitra-text--parse-translation err http body)))))
     buffer))
 
+(defun dharmamitra-text--region-or-line ()
+  "Return the active region as a list (START END), or the current line."
+  (if (use-region-p)
+      (list (region-beginning) (region-end))
+    (list (line-beginning-position) (line-end-position))))
+
+(defun dharmamitra-text--region-text (start end)
+  "Return the trimmed text between START and END, or signal an error."
+  (let ((text (string-trim (buffer-substring-no-properties start end))))
+    (when (string-empty-p text)
+      (user-error "No text to analyze"))
+    text))
+
 ;;;###autoload
 (defun dharmamitra-text-analyze-grammar (start end)
   "Analyze grammar and translate the text between START and END.
 Interactively, use the active region, or the current line when there is
 no region.  Both requests are sent to the dharmamitra.org API
 asynchronously and shown in `dharmamitra-text-buffer-name' as they arrive."
-  (interactive
-   (if (use-region-p)
-       (list (region-beginning) (region-end))
-     (list (line-beginning-position) (line-end-position))))
-  (let ((text (string-trim (buffer-substring-no-properties start end))))
-    (when (string-empty-p text)
-      (user-error "No text to analyze"))
-    (dharmamitra-text--start text)))
+  (interactive (dharmamitra-text--region-or-line))
+  (dharmamitra-text--start (dharmamitra-text--region-text start end)))
+
+;;;###autoload
+(defun dharmamitra-text-translate (start end)
+  "Translate the text between START and END without grammar analysis.
+Interactively, use the active region, or the current line when there is
+no region.  This works for Sanskrit, Pāli, Tibetan and Chinese and
+ignores `dharmamitra-text-include-translation'."
+  (interactive (dharmamitra-text--region-or-line))
+  (dharmamitra-text--start (dharmamitra-text--region-text start end) t))
 
 ;;;###autoload
 (defun dharmamitra-text-analyze-string (text)
@@ -809,22 +840,6 @@ asynchronously and shown in `dharmamitra-text-buffer-name' as they arrive."
     (when (string-empty-p text)
       (user-error "No text to analyze"))
     (dharmamitra-text--start text)))
-
-;; Add mode-specific hooks for convenient access
-(defun dharmamitra-text-maybe-bind-grammar-keys ()
-  "Bind grammar analysis keys if appropriate for the current mode."
-  (local-set-key (kbd "C-c g") #'dharmamitra-text-analyze-grammar))
-
-(add-hook 'text-mode-hook #'dharmamitra-text-maybe-bind-grammar-keys)
-(add-hook 'org-mode-hook #'dharmamitra-text-maybe-bind-grammar-keys)
-
-;; Global key binding
-(global-set-key (kbd "C-c g") #'dharmamitra-text-analyze-grammar)
-
-;; Add menu item
-(easy-menu-add-item nil '("Tools")
-                    ["Analyze Text with Dharmamitra" dharmamitra-text-analyze-grammar
-                     :help "Analyze Sanskrit, Tibetan, Chinese or Pāli text using dharmamitra.org"])
 
 (provide 'dharmamitra)
 

@@ -21,12 +21,25 @@ An Emacs package for translating and analyzing Sanskrit, Pāli, Tibetan, and Chi
 ;; Add the directory containing dharmamitra.el to load-path
 (add-to-list 'load-path "/path/to/directory/containing/dharmamitra")
 (require 'dharmamitra)
+(global-set-key (kbd "C-c g") #'dharmamitra-text-analyze-grammar)
+(global-set-key (kbd "C-c t") #'dharmamitra-text-translate)
 ```
+
+With `use-package` and `straight.el`:
+
+```elisp
+(use-package dharmamitra
+  :straight (dharmamitra :type git :host github :repo "dharmamitra/dharmamitra-emacs")
+  :bind (("C-c g" . dharmamitra-text-analyze-grammar)
+         ("C-c t" . dharmamitra-text-translate)))
+```
+
+The package does not bind any keys by itself; the bindings above are suggestions.
 
 ## Usage
 
 1. Select the text you want to analyze, or just put point on a line
-2. Press `C-c g` (`dharmamitra-text-analyze-grammar`)
+2. Press `C-c g` (`dharmamitra-text-analyze-grammar`) for grammar and translation, or `C-c t` (`dharmamitra-text-translate`) for the translation alone
 3. The `*Dharmamitra*` buffer opens and fills in as results arrive:
    - Original text
    - Segmented and lemmatized forms
@@ -35,7 +48,7 @@ An Emacs package for translating and analyzing Sanskrit, Pāli, Tibetan, and Chi
 
 You can also run `M-x dharmamitra-text-analyze-string` to type text directly.
 
-Multi-line input is analyzed line by line for grammar and translated as a whole. Grammar analysis is only available for Sanskrit (and, with limitations, Pāli); for Tibetan and Chinese only the translation is shown.
+Multi-line input is analyzed line by line for grammar and translated as a whole. Grammar analysis is only available for Sanskrit (and, with limitations, Pāli); for Tibetan and Chinese only the translation is shown. `dharmamitra-text-translate` always translates, even when translations are disabled for the grammar view.
 
 ### Keys in the analysis buffer
 
@@ -107,11 +120,7 @@ Where the analysis buffer is shown (a `display-buffer` action, default at the bo
 (setq dharmamitra-text-display-action '(display-buffer-in-side-window (side . right)))
 ```
 
-`C-c g` is bound globally and in `text-mode` and `org-mode`. To use a different key:
-
-```elisp
-(global-set-key (kbd "C-c d") #'dharmamitra-text-analyze-grammar)
-```
+Commands to bind (see Installation): `dharmamitra-text-analyze-grammar`, `dharmamitra-text-translate` and `dharmamitra-text-analyze-string`.
 
 ## API endpoints
 
